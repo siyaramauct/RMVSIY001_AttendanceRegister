@@ -1,0 +1,59 @@
+```gitignore
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# Build and test results
+TestResults/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# ASP.NET Core local development
+appsettings.Development.json
+
+# User-specific / local settings
+*.user
+*.rsuser
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Azure / local publishing
+publish/
+PublishProfiles/
+
+# Temporary files
+*.tmp
+*.temp
+```
