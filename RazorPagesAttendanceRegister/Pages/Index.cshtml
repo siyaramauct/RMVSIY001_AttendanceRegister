@@ -1,10 +1,78 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="hero-panel">
+    <div class="hero-copy">
+        <span class="eyebrow">Smart campus operations</span>
+        <h1>Attendance, made simple.</h1>
+        <p>
+            A modern attendance register built for UCT students and lecturers to track participation,
+            manage access, and keep campus records organised with clarity.
+        </p>
+
+        <div class="hero-actions">
+            <a class="primary-btn" asp-area="Identity" asp-page="/Account/Register">Create account</a>
+            <a class="secondary-btn" asp-area="Identity" asp-page="/Account/Login">Sign in</a>
+        </div>
+    </div>
+
+    <div class="hero-visual" aria-label="UCT attendance overview card">
+        <div class="visual-card main-card">
+            <div class="card-label">Live overview</div>
+            <h2>94.8%</h2>
+            <p>Attendance this week</p>
+            <div class="mini-bars" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="visual-card side-card">
+            <div class="card-label">Class room</div>
+            <strong>CSC101</strong>
+            <small>Lecture hall 2</small>
+        </div>
+    </div>
+</section>
+
+<section class="stats-grid">
+    <article class="stat-card">
+        <span class="stat-kicker">Students</span>
+        <strong>1,240</strong>
+        <small>Active records</small>
+    </article>
+    <article class="stat-card">
+        <span class="stat-kicker">Lecturers</span>
+        <strong>86</strong>
+        <small>Registered staff</small>
+    </article>
+    <article class="stat-card">
+        <span class="stat-kicker">Efficiency</span>
+        <strong>96%</strong>
+        <small>Workflow accuracy</small>
+    </article>
+</section>
+
+<section class="feature-grid">
+    <article class="feature-card">
+        <span class="feature-tag">01</span>
+        <h3>Student visibility</h3>
+        <p>Clear, accessible attendance data for every enrolment and session.</p>
+    </article>
+    <article class="feature-card">
+        <span class="feature-tag">02</span>
+        <h3>Lecturer tools</h3>
+        <p>Simple workflows for versioned, organised, and traceable class records.</p>
+    </article>
+    <article class="feature-card">
+        <span class="feature-tag">03</span>
+        <h3>Campus-ready</h3>
+        <p>Built for the rhythm of university life with a calm, dependable experience.</p>
+    </article>
+</section>
