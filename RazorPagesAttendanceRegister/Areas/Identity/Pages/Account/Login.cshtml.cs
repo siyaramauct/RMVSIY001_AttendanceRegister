@@ -21,11 +21,13 @@ namespace RazorPagesAttendanceRegister.Areas.Identity.Pages.Account
     public class LoginModel : PageModel
     {
         private readonly SignInManager<AttendanceUser> _signInManager;
+        private readonly UserManager<AttendanceUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<AttendanceUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<AttendanceUser> signInManager, UserManager<AttendanceUser> userManager, ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
         }
 
@@ -115,7 +117,21 @@ namespace RazorPagesAttendanceRegister.Areas.Identity.Pages.Account
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
+                    var user = await _userManager.FindByEmailAsync(Input.Email);
                     _logger.LogInformation("User logged in.");
+
+                    if (user != null)
+                    {
+                        if (user.Role == UserRole.Student)
+                        {
+                            return RedirectToPage("/Student/RecordAttendance");
+                        }
+                        else if (user.Role == UserRole.Lecturer)
+                        {
+                            return RedirectToPage("/Lecturer/ViewAttendance");
+                        }
+                    }
+
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

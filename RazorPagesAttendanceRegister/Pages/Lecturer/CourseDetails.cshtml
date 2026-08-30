@@ -1,0 +1,278 @@
+@page "{courseId}"
+@model RazorPagesAttendanceRegister.Pages.Lecturer.CourseDetailsModel
+@{
+    ViewData["Title"] = "Course Attendance Details";
+}
+
+<style>
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.65rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-align: center;
+        min-width: 90px;
+    }
+
+    .status-present {
+        background-color: #e6f4f1;
+        color: #00704a;
+    }
+
+    .status-absent {
+        background-color: #fce8e6;
+        color: #a50e0e;
+    }
+
+    .status-late {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-excused {
+        background-color: #e8f5e9;
+        color: #1b5e20;
+    }
+
+    .lecture-group {
+        margin-bottom: 2rem;
+    }
+
+    .lecture-header {
+        background-color: #f5f5f5;
+        padding: 1rem;
+        border-left: 4px solid #009ADA;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+    }
+
+    .attendance-table {
+        font-size: 0.95rem;
+    }
+
+    .attendance-table thead {
+        background-color: #f5f5f5;
+    }
+
+    .attendance-table tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+    }
+
+    .status-dropdown {
+        padding: 0.35rem 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        background-color: white;
+        color: #333;
+    }
+
+    .update-btn {
+        padding: 0.35rem 0.75rem;
+        background-color: #009ADA;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        white-space: nowrap;
+    }
+
+    .update-btn:hover {
+        background-color: #007ba5;
+    }
+
+    .update-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+    }
+
+    .alert-success {
+        background-color: #e6f4f1;
+        color: #00704a;
+        border: 1px solid #b2dfd5;
+    }
+
+    .alert-danger {
+        background-color: #fce8e6;
+        color: #a50e0e;
+        border: 1px solid #f5d1ce;
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-uppercase text-primary fw-semibold mb-1">Course attendance</p>
+            <h1 class="mb-0">@(Model.Course?.Code) - @(Model.Course?.Name)</h1>
+        </div>
+        <a href="@Url.Page("./ViewAttendance")" class="btn btn-outline-secondary">
+            ← Back to courses
+        </a>
+    </div>
+
+    <!-- Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            ✓ @Model.SuccessMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            ✗ @Model.ErrorMessage
+        </div>
+    }
+
+    @if (!Model.AttendanceByLecture.Any())
+    {
+        <div class="empty-state">
+            <p class="text-muted mb-0">No past attendance records found for this course.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Attendance Records Grouped by Lecture -->
+        @foreach (var lectureGroup in Model.AttendanceByLecture)
+        {
+            <div class="lecture-group">
+                <!-- Lecture Header -->
+                <div class="lecture-header">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-event"></i>
+                                @lectureGroup.LectureDate.ToString("dddd, MMMM dd, yyyy")
+                            </h5>
+                            <small class="text-muted">
+                                @lectureGroup.StartTime.ToString("hh:mm tt") - @lectureGroup.EndTime.ToString("hh:mm tt")
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge bg-light text-dark">
+                                @lectureGroup.StudentRecords.Count students
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Table for This Lecture -->
+                @if (lectureGroup.StudentRecords.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Student Number</th>
+                                    <th>Current Status</th>
+                                    <th>Update Status</th>
+                                    <th class="text-muted">Recorded At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var record in lectureGroup.StudentRecords)
+                                {
+                                    <tr>
+                                        <td>@record.StudentName</td>
+                                        <td><code>@(record.StudentNumber ?? "—")</code></td>
+                                        <td>
+                                            <span class="status-badge status-@(record.Status.ToString().ToLower())">
+                                                @record.Status
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <form method="post" style="display: inline; margin: 0;">
+                                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                    <select name="newStatus" class="status-dropdown">
+                                                        <option value="0">Present</option>
+                                                        <option value="1">Absent</option>
+                                                        <option value="2">Late</option>
+                                                        <option value="3">Excused</option>
+                                                    </select>
+                                                    @if (Model.Course != null)
+                                                    {
+                                                        <input type="hidden" name="courseId" value="@Model.Course.Id" />
+                                                    }
+                                                    <input type="hidden" name="attendanceRecordId" value="@record.AttendanceRecordId" />
+                                                    <button type="submit" class="update-btn">Update</button>
+                                                </div>
+                                            </form>
+                                        </td>
+                                        <td class="text-muted small">
+                                            @record.RecordedAt.ToString("MMM dd, HH:mm")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <small class="text-muted">No attendance records for this lecture.</small>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Summary Statistics -->
+        <div class="row mt-5 pt-3 border-top">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="status-present mb-1">
+                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                    AttendanceStatus.Present))
+                    </h4>
+                    <small class="text-muted">Present</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="status-absent mb-1">
+                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                    AttendanceStatus.Absent))
+                    </h4>
+                    <small class="text-muted">Absent</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="status-late mb-1">
+                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                    AttendanceStatus.Late))
+                    </h4>
+                    <small class="text-muted">Late</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="status-excused mb-1">
+                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                    AttendanceStatus.Excused))
+                    </h4>
+                    <small class="text-muted">Excused</small>
+                </div>
+            </div>
+        </div>
+    }
+</div>

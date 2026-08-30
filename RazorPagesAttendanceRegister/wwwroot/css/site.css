@@ -3,11 +3,12 @@
     --uct-blue: #009ADA;
     --uct-navy: #00243A;
     --uct-white: #ffffff;
-    --uct-surface: #f5f7f9;
+    --uct-surface: #f2f6f8;
     --uct-line: #dfe7ed;
     --uct-text: #10212d;
     --uct-muted: #536372;
-    --font-display: "Noto Serif Ottoman Siyaq", serif;
+    --font-display: "Noto Serif Ottoman Siyaq", Georgia, serif;
+    --font-body: "Manrope", "Segoe UI", sans-serif;
 }
 
 html {
@@ -18,7 +19,7 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: var(--font-body);
     background: var(--uct-surface);
     color: var(--uct-text);
 }
@@ -74,17 +75,24 @@ h1, h2, h3, .brand-title, .brand-mark {
 }
 
 .brand-mark {
-    width: 3.1rem;
-    height: 3.1rem;
+    width: 3.4rem;
+    height: 3.4rem;
     border-radius: 8px;
-    background: var(--uct-blue);
-    color: var(--uct-white);
-    display: grid;
-    place-items: center;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    line-height: 1;
+    background: var(--uct-white);
+    border: 1px solid var(--uct-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    padding: 0.2rem;
 }
 
 .brand-copy {
@@ -147,6 +155,30 @@ h1, h2, h3, .brand-title, .brand-mark {
     background: var(--uct-white);
     color: var(--uct-navy);
     display: inline-block;
+}
+
+.nav-actions .navbar-nav {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    margin: 0;
+}
+
+.nav-actions .nav-item {
+    flex: 0 0 auto;
+}
+
+.nav-user-name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.35rem;
+    padding: 0.55rem 0.75rem;
+    color: var(--uct-muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .nav-actions .btn-link {
@@ -430,5 +462,203 @@ h1, h2, h3, .brand-title, .brand-mark {
     .footer-inner {
         flex-direction: column;
         text-align: center;
+    }
+}
+
+/* Shared interaction and component treatment. */
+.nav-link {
+    color: var(--uct-navy) !important;
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+
+.nav-link:hover {
+    color: var(--uct-blue) !important;
+    background-color: #edf8fc;
+    text-decoration: none;
+}
+
+.nav-link:active,
+.btn:active,
+.primary-btn:active,
+.secondary-btn:active {
+    transform: translateY(1px);
+}
+
+.nav-link:focus-visible,
+.btn:focus-visible,
+.primary-btn:focus-visible,
+.secondary-btn:focus-visible {
+    outline: 3px solid rgba(0, 154, 218, 0.3);
+    outline-offset: 2px;
+}
+
+.nav-wrap,
+.card,
+.btn,
+.form-control,
+.form-select,
+.status-dropdown {
+    box-shadow: none !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+.status-dropdown:focus {
+    border-color: var(--uct-blue);
+    box-shadow: none !important;
+}
+
+.nav-actions .nav-link,
+.nav-actions .btn-link {
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+}
+
+.nav-actions .nav-link:hover {
+    border-color: var(--uct-blue);
+}
+
+.nav-actions .btn-link:hover {
+    background-color: var(--uct-blue);
+    border-color: var(--uct-blue);
+    color: var(--uct-white) !important;
+}
+
+.nav-actions #logout {
+    color: var(--uct-white) !important;
+}
+
+.nav-actions #logout:hover {
+    color: var(--uct-white) !important;
+}
+
+.btn,
+.primary-btn,
+.secondary-btn {
+    border-radius: 6px;
+    font-weight: 700;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+
+.btn-primary {
+    background-color: var(--uct-blue);
+    border-color: var(--uct-blue);
+}
+
+.btn-primary:hover {
+    background-color: #007eaf;
+    border-color: #007eaf;
+}
+
+.btn-outline-primary {
+    color: var(--uct-navy);
+    border-color: var(--uct-blue);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--uct-blue);
+    border-color: var(--uct-blue);
+    color: var(--uct-white);
+}
+
+.btn-outline-secondary {
+    color: var(--uct-navy);
+    border-color: #aabac4;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--uct-navy);
+    border-color: var(--uct-navy);
+    color: var(--uct-white);
+}
+
+.card,
+.list-group-item,
+.table,
+.alert {
+    border-color: var(--uct-line);
+}
+
+.card {
+    border-radius: 8px;
+    background-color: var(--uct-white);
+}
+
+.card-footer {
+    border-top-color: var(--uct-line);
+}
+
+.table {
+    --bs-table-border-color: var(--uct-line);
+    background-color: var(--uct-white);
+}
+
+.table thead th {
+    color: var(--uct-navy);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background-color: #f5f8fa;
+}
+
+.list-group-item {
+    background-color: var(--uct-white);
+}
+
+.list-group-item:hover {
+    background-color: #f7fbfd;
+}
+
+.alert {
+    border-radius: 6px;
+}
+
+.badge {
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+#loginForm,
+#registerForm {
+    display: grid;
+    gap: 1rem;
+}
+
+#loginForm .form-floating,
+#registerForm .form-floating,
+#registerForm .checkbox {
+    margin-bottom: 0 !important;
+}
+
+#loginForm .btn,
+#registerForm .btn {
+    margin-top: 0.35rem;
+}
+
+#loginForm .form-control,
+#registerForm .form-control,
+#registerForm .form-select {
+    min-height: 3.25rem;
+}
+
+@media (max-width: 768px) {
+    .nav-center,
+    .nav-actions {
+        width: 100%;
+        justify-content: center;
+        margin: 0;
+    }
+
+    .nav-actions .navbar-nav {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    #loginForm,
+    #registerForm {
+        gap: 0.8rem;
     }
 }

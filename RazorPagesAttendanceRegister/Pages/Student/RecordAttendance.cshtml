@@ -1,0 +1,130 @@
+@page
+@model RazorPagesAttendanceRegister.Pages.Student.RecordAttendanceModel
+@{
+    ViewData["Title"] = "Record Attendance";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-uppercase text-primary fw-semibold mb-1">Student portal</p>
+            <h1 class="mb-0">Record attendance</h1>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")" role="alert">
+            @Model.StatusMessage
+        </div>
+    }
+
+    <section class="mb-5">
+        <h2 class="h4 mb-3">Lectures you can mark now</h2>
+
+        @if (Model.ActiveLectures.Any())
+        {
+            <div class="list-group">
+                @foreach (var lecture in Model.ActiveLectures)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <div class="fw-semibold">@lecture.Course?.Code - @lecture.Course?.Name</div>
+                            <div class="text-muted">@lecture.ScheduledDate.ToString("dddd, dd MMM yyyy")</div>
+                        </div>
+
+                        <form method="post">
+                            <input type="hidden" name="lectureId" value="@lecture.Id" />
+                            <button type="submit" class="btn btn-primary">Mark Present</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info" role="alert">
+                No lectures are currently open for attendance.
+            </div>
+        }
+    </section>
+
+    <section>
+        <h2 class="h4 mb-3">Your attendance history</h2>
+
+        @if (Model.PastAttendance.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Query</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.PastAttendance)
+                        {
+                            var badgeClass = item.Status switch
+                            {
+                                AttendanceStatus.Present => "badge bg-success",
+                                AttendanceStatus.Absent => "badge bg-danger",
+                                AttendanceStatus.Late => "badge bg-warning text-dark",
+                                AttendanceStatus.Excused => "badge bg-info text-dark",
+                                _ => "badge bg-secondary"
+                            };
+
+                            <tr>
+                                <td>@item.CourseCode - @item.CourseName</td>
+                                <td>@item.LectureDate.ToString("dddd, dd MMM yyyy")</td>
+                                <td><span class="@badgeClass">@item.Status</span></td>
+                                <td>
+                                    @{
+                                        var query = Model.StudentQueries
+                                            .Where(q => q.AttendanceRecordId == item.AttendanceRecordId)
+                                            .OrderByDescending(q => q.Status == QueryStatus.Pending)
+                                            .ThenByDescending(q => q.CreatedAt)
+                                            .FirstOrDefault();
+                                    }
+
+                                    @if (query != null)
+                                    {
+                                        var queryBadgeClass = query.Status switch
+                                        {
+                                            QueryStatus.Pending => "badge bg-warning text-dark",
+                                            QueryStatus.Approved => "badge bg-success",
+                                            QueryStatus.Rejected => "badge bg-danger",
+                                            _ => "badge bg-secondary"
+                                        };
+                                        <span class="@queryBadgeClass">@query.Status</span>
+                                    }
+                                    else if (item.Status is AttendanceStatus.Absent or AttendanceStatus.Late)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                onclick="this.nextElementSibling.hidden = !this.nextElementSibling.hidden">
+                                            Query this
+                                        </button>
+                                        <form method="post" asp-page-handler="RaiseQuery" class="mt-2" hidden>
+                                            <input type="hidden" name="attendanceRecordId" value="@item.AttendanceRecordId" />
+                                            <textarea name="reason" class="form-control mb-2" maxlength="500" rows="3" required
+                                                      placeholder="Reason for your query"></textarea>
+                                            <button type="submit" class="btn btn-sm btn-primary">Submit query</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-secondary" role="alert">
+                No previous attendance has been recorded yet.
+            </div>
+        }
+    </section>
+</div>

@@ -1,0 +1,53 @@
+@page
+@model RazorPagesAttendanceRegister.Pages.Lecturer.ViewAttendanceModel
+@{
+    ViewData["Title"] = "Manage Attendance";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-uppercase text-primary fw-semibold mb-1">Lecturer portal</p>
+            <h1 class="mb-0">Attendance management</h1>
+        </div>
+    </div>
+
+    @if (Model.CourseList.Any())
+    {
+        <div class="row g-4">
+            @foreach (var course in Model.CourseList)
+            {
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">@course.Code</h5>
+                            <p class="card-text">@course.Name</p>
+                            <div class="row mt-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Lectures</small>
+                                    <span class="h5">@course.TotalLectures</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Enrolled Students</small>
+                                    <span class="h5">@course.EnrolledStudents</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="@Url.Page("./CourseDetails", new { courseId = course.CourseId })"
+                               class="btn btn-sm btn-outline-primary">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            You are not assigned to any courses yet.
+        </div>
+    }
+</div>

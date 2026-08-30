@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RazorPagesAttendanceRegister.Data;
 
@@ -10,9 +11,11 @@ using RazorPagesAttendanceRegister.Data;
 namespace RazorPagesAttendanceRegister.Migrations
 {
     [DbContext(typeof(AttendanceDbContext))]
-    partial class AttendanceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260830110044_AddCourseLectureAttendance")]
+    partial class AddCourseLectureAttendance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
@@ -143,47 +146,6 @@ namespace RazorPagesAttendanceRegister.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("RazorPagesAttendanceRegister.Models.AttendanceQuery", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("AttendanceRecordId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LecturerResponse")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(0);
-
-                    b.Property<string>("StudentId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AttendanceRecordId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("AttendanceQueries");
                 });
 
             modelBuilder.Entity("RazorPagesAttendanceRegister.Models.AttendanceRecord", b =>
@@ -389,21 +351,6 @@ namespace RazorPagesAttendanceRegister.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RazorPagesAttendanceRegister.Models.AttendanceQuery", b =>
-                {
-                    b.HasOne("RazorPagesAttendanceRegister.Models.AttendanceRecord", null)
-                        .WithMany()
-                        .HasForeignKey("AttendanceRecordId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("RazorPagesAttendanceRegister.Models.AttendanceUser", null)
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("RazorPagesAttendanceRegister.Models.AttendanceRecord", b =>
                 {
                     b.HasOne("RazorPagesAttendanceRegister.Models.Lecture", null)
@@ -415,18 +362,11 @@ namespace RazorPagesAttendanceRegister.Migrations
 
             modelBuilder.Entity("RazorPagesAttendanceRegister.Models.Lecture", b =>
                 {
-                    b.HasOne("RazorPagesAttendanceRegister.Models.Course", "Course")
-                        .WithMany("Lectures")
+                    b.HasOne("RazorPagesAttendanceRegister.Models.Course", null)
+                        .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("RazorPagesAttendanceRegister.Models.Course", b =>
-                {
-                    b.Navigation("Lectures");
                 });
 #pragma warning restore 612, 618
         }

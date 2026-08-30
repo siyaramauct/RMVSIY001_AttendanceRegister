@@ -1,0 +1,98 @@
+@page
+@model RazorPagesAttendanceRegister.Pages.Lecturer.ManageQueriesModel
+@{
+    ViewData["Title"] = "Manage Queries";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-uppercase text-primary fw-semibold mb-1">Lecturer portal</p>
+            <h1 class="mb-0">Attendance queries</h1>
+        </div>
+        <a asp-page="/Lecturer/ViewAttendance" class="btn btn-outline-secondary">Back to courses</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")" role="alert">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.PendingQueries.Any())
+    {
+        <div class="row g-4">
+            @foreach (var query in Model.PendingQueries)
+            {
+                var studentName = query.Student == null
+                    ? query.StudentId
+                    : $"{query.Student.Name} {query.Student.Surname}".Trim();
+                var courseCode = query.AttendanceRecord?.Lecture?.Course?.Code ?? "Unknown course";
+                var lectureDate = query.AttendanceRecord?.Lecture?.ScheduledDate;
+                var originalStatus = query.AttendanceRecord?.Status.ToString() ?? "Unknown";
+
+                <div class="col-12">
+                    <article class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <h2 class="h5 mb-1">@studentName</h2>
+                                    <div class="text-muted">
+                                        @courseCode
+                                        @if (lectureDate.HasValue)
+                                        {
+                                            <span> &middot; @lectureDate.Value.ToString("dddd, dd MMM yyyy")</span>
+                                        }
+                                    </div>
+                                </div>
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            </div>
+
+                            <dl class="row mb-3">
+                                <dt class="col-sm-3">Original status</dt>
+                                <dd class="col-sm-9">@originalStatus</dd>
+                                <dt class="col-sm-3">Student reason</dt>
+                                <dd class="col-sm-9 mb-0">@query.Reason</dd>
+                            </dl>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <form method="post" asp-page-handler="Resolve" class="query-action-form">
+                                    <input type="hidden" name="queryId" value="@query.Id" />
+                                    <input type="hidden" name="approve" value="true" />
+                                    <button type="button" class="btn btn-success"
+                                            onclick="this.hidden = true; this.nextElementSibling.hidden = false; this.nextElementSibling.focus(); this.form.querySelector('.response-submit').hidden = false;">
+                                        Approve
+                                    </button>
+                                    <textarea name="response" class="form-control mt-2 response-entry" rows="2" maxlength="500"
+                                              placeholder="Lecturer response" hidden></textarea>
+                                    <button type="submit" class="btn btn-sm btn-success mt-2 response-submit" hidden>Confirm
+                                        approval</button>
+                                    </form>
+
+                                    <form method="post" asp-page-handler="Resolve" class="query-action-form">
+                                        <input type="hidden" name="queryId" value="@query.Id" />
+                                        <input type="hidden" name="approve" value="false" />
+                                        <button type="button" class="btn btn-outline-danger"
+                                                onclick="this.hidden = true; this.nextElementSibling.hidden = false; this.nextElementSibling.focus(); this.form.querySelector('.response-submit').hidden = false;">
+                                            Reject
+                                        </button>
+                                        <textarea name="response" class="form-control mt-2 response-entry" rows="2" maxlength="500"
+                                                  placeholder="Lecturer response" hidden></textarea>
+                                        <button type="submit" class="btn btn-sm btn-danger mt-2 response-submit" hidden>Confirm
+                                            rejection</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    }
+                </div>
+            }
+    else
+            {
+                <div class="alert alert-info" role="alert">
+                    There are no pending attendance queries.
+                </div>
+            }
+        </div>

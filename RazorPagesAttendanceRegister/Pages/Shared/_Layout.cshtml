@@ -8,7 +8,9 @@
     <script type="importmap"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Ottoman+Siyaq&display=swap" rel="stylesheet">
+    <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+Ottoman+Siyaq&display=swap"
+    rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/RazorPagesAttendanceRegister.styles.css" asp-append-version="true" />
@@ -17,18 +19,21 @@
 <body>
     <div class="page-shell">
         <header class="topbar">
-            <nav class="navbar navbar-expand-sm navbar-light">
+            <nav class="navbar">
                 <div class="container nav-wrap">
                     <a class="navbar-brand brand" asp-area="" asp-page="/Index"
                        aria-label="UCT Attendance Register home">
-                        <span class="brand-mark">UCT</span>
+                        <span class="brand-mark">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYj4B9_fQ3xIZOhhJM4Xokl-bUg45bA3GPm7VJE2dxgfHpIBWWs2N6IiQV&s=10"
+                                 alt="University of Cape Town logo" />
+                        </span>
                         <span class="brand-copy">
                             <span class="brand-title">Attendance Register</span>
                             <span class="brand-subtitle">University of Cape Town</span>
                         </span>
                     </a>
 
-                    <div class="nav-center">
+                    <div class="nav-center" aria-label="Primary navigation">
                         <a class="nav-link" asp-area="" asp-page="/Index">Home</a>
                         <a class="nav-link" asp-area="" asp-page="/Privacy">Privacy</a>
                     </div>
