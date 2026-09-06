@@ -1,0 +1,90 @@
+@page
+@model RazorPagesAttendanceRegister.Pages.Lecturer.ImportAttendanceModel
+@{
+    ViewData["Title"] = "Import Attendance";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-uppercase text-primary fw-semibold mb-1">Lecturer portal</p>
+            <h1 class="mb-1">Import attendance</h1>
+            <p class="text-muted mb-0">Upload an Excel attendance sheet for one of your courses.</p>
+        </div>
+        <a asp-page="/Lecturer/ViewAttendance" class="btn btn-outline-secondary">Back to courses</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    @if (Model.StructuralErrors.Any())
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>The file could not be imported.</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var error in Model.StructuralErrors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Model.Summary is not null)
+    {
+        <div class="alert @(Model.Summary.Success ? "alert-success" : "alert-danger")" role="alert">
+            <strong>@Model.Summary.Message</strong>
+            <dl class="row mb-0 mt-3">
+                <dt class="col-sm-4">Records created</dt>
+                <dd class="col-sm-8">@Model.Summary.RecordsCreated</dd>
+                <dt class="col-sm-4">Records updated</dt>
+                <dd class="col-sm-8">@Model.Summary.RecordsUpdated</dd>
+                <dt class="col-sm-4">Lectures auto-created</dt>
+                <dd class="col-sm-8">@Model.Summary.LecturesAutoCreated</dd>
+            </dl>
+
+            @if (Model.Summary.UnmatchedStudentNumbers.Any())
+            {
+                <h2 class="h6 mt-3">Unmatched student numbers</h2>
+                <ul class="mb-0">
+                    @foreach (var studentNumber in Model.Summary.UnmatchedStudentNumbers)
+                    {
+                        <li>@studentNumber</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+
+    <section class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                <div class="mb-4">
+                    <label asp-for="CourseId" class="form-label">Course</label>
+                    <select asp-for="CourseId" class="form-select" required>
+                        <option value="">Select a course</option>
+                        @foreach (var course in Model.Courses)
+                        {
+                            <option value="@course.Id">@course.Code - @course.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="CourseId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label for="attendanceFile" class="form-label">Attendance workbook</label>
+                    <input id="attendanceFile" name="file" type="file" class="form-control" accept=".xlsx" required />
+                    <div class="form-text">Upload an .xlsx file no larger than 5 MB.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Import attendance</button>
+            </form>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

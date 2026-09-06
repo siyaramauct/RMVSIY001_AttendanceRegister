@@ -1,0 +1,58 @@
+@page
+@model RazorPagesAttendanceRegister.Pages.Student.IndexModel
+@{
+    ViewData["Title"] = "Student Home";
+}
+
+<div class="portal-home student-home">
+    <section class="portal-hero student-hero">
+        <div class="portal-hero-content">
+            <p class="eyebrow">Student portal</p>
+            <h1>Your campus day, in view.</h1>
+            <p>Mark attendance while class is open, review your record, and keep an eye on the campus moments around
+                your timetable.</p>
+                <div class="hero-actions">
+                    <a class="primary-btn" asp-page="/Student/RecordAttendance">Record attendance</a>
+                    <a class="secondary-btn" asp-page="/Student/RecordAttendance">View my history</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="portal-section-heading">
+            <div>
+                <p class="section-kicker">South African campus brief</p>
+                <h2>Stay close to campus life</h2>
+            </div>
+            <span class="section-note">This week's quick read</span>
+        </section>
+
+        <section class="info-grid student-info-grid">
+            <article class="info-card image-card">
+                <img src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&w=900&q=85"
+                     alt="University library shelves" />
+                <div class="info-card-body">
+                    <span class="card-label">University news</span>
+                    <h3>Campus libraries extend quiet study hours</h3>
+                    <p>Check your faculty notices for late-study access, exam preparation spaces, and support sessions.</p>
+                </div>
+            </article>
+            <article class="info-card image-card">
+                <img src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=900&q=85"
+                     alt="University athletes on a track" />
+                <div class="info-card-body">
+                    <span class="card-label">Sport</span>
+                    <h3>Varsity fixtures bring the campus together</h3>
+                    <p>Follow the latest university fixtures and make space for movement between study blocks.</p>
+                </div>
+            </article>
+            <article class="info-card tip-card">
+                <div class="tip-number">03</div>
+                <div class="info-card-body">
+                    <span class="card-label">Student tip</span>
+                    <h3>Build a two-minute attendance habit</h3>
+                    <p>Arrive, open the register, and mark your attendance before settling into the lecture. Small routines
+                        protect your record.</p>
+                    </div>
+                </article>
+            </section>
+        </div>

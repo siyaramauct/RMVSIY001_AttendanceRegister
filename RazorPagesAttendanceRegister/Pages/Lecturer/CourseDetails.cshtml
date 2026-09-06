@@ -40,9 +40,9 @@
     }
 
     .lecture-header {
-        background-color: #f5f5f5;
+        background-color: #f5f8fa;
         padding: 1rem;
-        border-left: 4px solid #009ADA;
+        border-left: 4px solid var(--uct-blue, #009ADA);
         margin-bottom: 1rem;
         border-radius: 4px;
     }
@@ -52,23 +52,23 @@
     }
 
     .attendance-table thead {
-        background-color: #f5f5f5;
+        background-color: #f5f8fa;
     }
 
     .attendance-table tbody tr:hover {
-        background-color: #f9f9f9;
+        background-color: #f9fbfd;
     }
 
     .empty-state {
         text-align: center;
         padding: 2rem;
-        background-color: #f5f5f5;
+        background-color: #f5f8fa;
         border-radius: 4px;
     }
 
     .status-dropdown {
         padding: 0.35rem 0.5rem;
-        border: 1px solid #ddd;
+        border: 1px solid var(--uct-line, #dfe7ed);
         border-radius: 4px;
         font-size: 0.875rem;
         background-color: white;
@@ -77,7 +77,7 @@
 
     .update-btn {
         padding: 0.35rem 0.75rem;
-        background-color: #009ADA;
+        background-color: var(--uct-blue, #009ADA);
         color: white;
         border: none;
         border-radius: 4px;
@@ -91,27 +91,59 @@
         background-color: #007ba5;
     }
 
-    .update-btn:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
+    .upload-card {
+        background-color: #ffffff;
+        border: 1px solid var(--uct-line, #dfe7ed);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
     }
 
-    .alert {
-        padding: 1rem;
-        border-radius: 4px;
+    .upload-title {
+        color: var(--uct-navy, #00243A);
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-instruction {
+        color: var(--uct-muted, #536372);
+        font-size: 0.9rem;
         margin-bottom: 1rem;
     }
 
-    .alert-success {
-        background-color: #e6f4f1;
-        color: #00704a;
-        border: 1px solid #b2dfd5;
+    .file-input-wrapper {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
-    .alert-danger {
-        background-color: #fce8e6;
-        color: #a50e0e;
-        border: 1px solid #f5d1ce;
+    .method-tag {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.45rem;
+        border-radius: 3px;
+        font-weight: 600;
+    }
+
+    .method-excel {
+        background-color: #edf8fc;
+        color: #006080;
+        border: 1px solid #c2e2ee;
+    }
+
+    .method-manual {
+        background-color: #f3f4f6;
+        color: #4b5563;
+        border: 1px solid #e5e7eb;
+    }
+
+    .import-stats-box {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
     }
 </style>
 
@@ -122,9 +154,14 @@
             <p class="text-uppercase text-primary fw-semibold mb-1">Course attendance</p>
             <h1 class="mb-0">@(Model.Course?.Code) - @(Model.Course?.Name)</h1>
         </div>
-        <a href="@Url.Page("./ViewAttendance")" class="btn btn-outline-secondary">
-            ← Back to courses
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="@Url.Page("./Overview", new { courseId = Model.Course?.Id })" class="btn btn-outline-primary">
+                Overview
+            </a>
+            <a href="@Url.Page("./ViewAttendance")" class="btn btn-outline-secondary">
+                ← Back to courses
+            </a>
+        </div>
     </div>
 
     <!-- Messages -->
@@ -141,6 +178,90 @@
             ✗ @Model.ErrorMessage
         </div>
     }
+
+    <!-- Structural Errors Alert -->
+    @if (Model.StructuralErrors.Any())
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Spreadsheet Errors:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var error in Model.StructuralErrors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <!-- Unmatched Students Warning -->
+    @if (Model.UnmatchedStudents.Any())
+    {
+        <div class="alert alert-warning" role="alert">
+            <strong>Unmatched Student Numbers:</strong> The following @Model.UnmatchedStudents.Count student number(s) in
+            the spreadsheet could not be matched to registered accounts:
+            <div class="mt-2 d-flex flex-wrap gap-2">
+                @foreach (var studentNumber in Model.UnmatchedStudents)
+                {
+                    <span class="badge bg-dark">@studentNumber</span>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Import Summary Details -->
+    @if (Model.ImportResult != null)
+    {
+        <div class="import-stats-box">
+            <h6 class="text-success mb-2"><strong>Import Summary</strong></h6>
+            <div class="row text-center g-2">
+                <div class="col-md-3 col-6">
+                    <div class="p-2 border rounded bg-white">
+                        <small class="text-muted d-block">Records Created</small>
+                        <strong class="h5 text-dark">@Model.ImportResult.RecordsCreated</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-2 border rounded bg-white">
+                        <small class="text-muted d-block">Records Updated</small>
+                        <strong class="h5 text-dark">@Model.ImportResult.RecordsUpdated</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-2 border rounded bg-white">
+                        <small class="text-muted d-block">Lectures Auto-Created</small>
+                        <strong class="h5 text-dark">@Model.ImportResult.LecturesAutoCreated</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-2 border rounded bg-white">
+                        <small class="text-muted d-block">Unmatched Numbers</small>
+                        <strong class="h5 text-danger">@Model.ImportResult.UnmatchedStudentNumbers.Count</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Upload Spreadsheet Section -->
+    <div class="upload-card" id="import-section">
+        <h2 class="upload-title">Import Attendance from Excel (.xlsx)</h2>
+        <p class="upload-instruction">
+            Upload a spreadsheet containing student attendance. The sheet should have <strong>Student Name</strong> in
+            Column A, <strong>Student Number</strong> in Column B, and lecture dates formatted as
+            <code>yyyy/MM/dd</code> in Columns C onward with <code>1</code> for Present and <code>0</code> for Absent.
+        </p>
+
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Upload"
+              asp-route-courseId="@Model.Course?.Id">
+            <div class="file-input-wrapper">
+                <input type="file" name="uploadFile" accept=".xlsx" class="form-control" style="max-width: 400px;"
+                       required />
+                <button type="submit" class="btn btn-primary">
+                    Upload &amp; Import
+                </button>
+            </div>
+        </form>
+    </div>
 
     @if (!Model.AttendanceByLecture.Any())
     {
@@ -159,7 +280,6 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <h5 class="mb-0">
-                                <i class="bi bi-calendar-event"></i>
                                 @lectureGroup.LectureDate.ToString("dddd, MMMM dd, yyyy")
                             </h5>
                             <small class="text-muted">
@@ -167,7 +287,7 @@
                             </small>
                         </div>
                         <div class="col-auto">
-                            <span class="badge bg-light text-dark">
+                            <span class="badge bg-light text-dark border">
                                 @lectureGroup.StudentRecords.Count students
                             </span>
                         </div>
@@ -178,12 +298,13 @@
                 @if (lectureGroup.StudentRecords.Any())
                 {
                     <div class="table-responsive">
-                        <table class="table attendance-table">
+                        <table class="table attendance-table align-middle">
                             <thead>
                                 <tr>
                                     <th>Student Name</th>
                                     <th>Student Number</th>
-                                    <th>Current Status</th>
+                                    <th>Status</th>
+                                    <th>Source</th>
                                     <th>Update Status</th>
                                     <th class="text-muted">Recorded At</th>
                                 </tr>
@@ -200,79 +321,99 @@
                                             </span>
                                         </td>
                                         <td>
+                                            @if (record.Method == RazorPagesAttendanceRegister.Models.AttendanceMethod.ExcelImport)
+                                            {
+                                                <span class="method-tag method-excel">Excel Import</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="method-tag method-manual">Manual</span>
+                                            }
+                                        </td>
+                                        <td>
                                             <form method="post" style="display: inline; margin: 0;">
                                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                                    <select name="newStatus" class="status-dropdown">
-                                                        <option value="0">Present</option>
-                                                        <option value="1">Absent</option>
-                                                        <option value="2">Late</option>
-                                                        <option value="3">Excused</option>
-                                                    </select>
-                                                    @if (Model.Course != null)
-                                                    {
-                                                        <input type="hidden" name="courseId" value="@Model.Course.Id" />
-                                                    }
-                                                    <input type="hidden" name="attendanceRecordId" value="@record.AttendanceRecordId" />
-                                                    <button type="submit" class="update-btn">Update</button>
-                                                </div>
-                                            </form>
-                                        </td>
-                                        <td class="text-muted small">
-                                            @record.RecordedAt.ToString("MMM dd, HH:mm")
-                                        </td>
-                                    </tr>
+                                                    <select name="newStatus" class="status-dropdown"
+                                                            data-original-status="@((int)record.Status)"
+                                                            onchange="updateAttendanceAction(this)">
+                                                        <option value="0"
+                                                                selected="@(record.Status == RazorPagesAttendanceRegister.Models.AttendanceStatus.Present)">
+                                                            Present</option>
+                                                            <option value="1"
+                                                                    selected="@(record.Status == RazorPagesAttendanceRegister.Models.AttendanceStatus.Absent)">
+                                                                Absent</option>
+                                                                <option value="2"
+                                                                        selected="@(record.Status == RazorPagesAttendanceRegister.Models.AttendanceStatus.Late)">
+                                                                    Late</option>
+                                                                    <option value="3"
+                                                                            selected="@(record.Status == RazorPagesAttendanceRegister.Models.AttendanceStatus.Excused)">
+                                                                        Excused</option>
+                                                                    </select>
+                                                                    @if (Model.Course != null)
+                                                                    {
+                                                                        <input type="hidden" name="courseId" value="@Model.Course.Id" />
+                                                                    }
+                                                                    <input type="hidden" name="attendanceRecordId" value="@record.AttendanceRecordId" />
+                                                                    <button type="submit" class="update-btn" hidden>Update</button>
+                                                                </div>
+                                                            </form>
+                                                        </td>
+                                                        <td class="text-muted small">
+                                                            @record.RecordedAt.ToString("MMM dd, HH:mm")
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 }
-                            </tbody>
-                        </table>
-                    </div>
-                }
                 else
-                {
-                    <div class="empty-state">
-                        <small class="text-muted">No attendance records for this lecture.</small>
-                    </div>
-                }
-            </div>
-        }
+                                {
+                                    <div class="empty-state">
+                                        <small class="text-muted">No attendance records for this lecture.</small>
+                                    </div>
+                                }
+                            </div>
+                        }
 
-        <!-- Summary Statistics -->
-        <div class="row mt-5 pt-3 border-top">
-            <div class="col-md-3">
-                <div class="text-center">
-                    <h4 class="status-present mb-1">
-                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
-                    AttendanceStatus.Present))
-                    </h4>
-                    <small class="text-muted">Present</small>
+                        <!-- Summary Statistics -->
+                        <div class="row mt-5 pt-3 border-top">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="status-present mb-1">
+                                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                                    RazorPagesAttendanceRegister.Models.AttendanceStatus.Present))
+                                    </h4>
+                                    <small class="text-muted">Present</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="status-absent mb-1">
+                                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                                    RazorPagesAttendanceRegister.Models.AttendanceStatus.Absent))
+                                    </h4>
+                                    <small class="text-muted">Absent</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="status-late mb-1">
+                                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                                    RazorPagesAttendanceRegister.Models.AttendanceStatus.Late))
+                                    </h4>
+                                    <small class="text-muted">Late</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="status-excused mb-1">
+                                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
+                                    RazorPagesAttendanceRegister.Models.AttendanceStatus.Excused))
+                                    </h4>
+                                    <small class="text-muted">Excused</small>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <h4 class="status-absent mb-1">
-                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
-                    AttendanceStatus.Absent))
-                    </h4>
-                    <small class="text-muted">Absent</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <h4 class="status-late mb-1">
-                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
-                    AttendanceStatus.Late))
-                    </h4>
-                    <small class="text-muted">Late</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <h4 class="status-excused mb-1">
-                        @(Model.AttendanceByLecture.SelectMany(l => l.StudentRecords).Count(r => r.Status ==
-                    AttendanceStatus.Excused))
-                    </h4>
-                    <small class="text-muted">Excused</small>
-                </div>
-            </div>
-        </div>
-    }
-</div>

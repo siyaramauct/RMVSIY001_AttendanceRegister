@@ -345,5 +345,37 @@ namespace RazorPagesAttendanceRegister.Services
                     : "Query rejected successfully."
             };
         }
+
+        /// <inheritdoc />
+        public async Task<List<LectureAttendanceSummaryDto>> GetAttendanceOverviewAsync(string lecturerId, int courseId)
+        {
+            var ownsCourse = await _context.Courses
+                .AnyAsync(course => course.Id == courseId && course.LecturerId == lecturerId);
+
+            if (!ownsCourse)
+            {
+                return new List<LectureAttendanceSummaryDto>();
+            }
+
+            // EF Core translates this join/group/conditional-count projection into one SQL query.
+            return await _context.Lectures
+                .Where(lecture => lecture.CourseId == courseId)
+                .Join(
+                    _context.AttendanceRecords,
+                    lecture => lecture.Id,
+                    record => record.LectureId,
+                    (lecture, record) => new { lecture.ScheduledDate, record.Status })
+                .GroupBy(item => item.ScheduledDate)
+                .Select(group => new LectureAttendanceSummaryDto
+                {
+                    LectureDate = group.Key,
+                    PresentCount = group.Count(item => item.Status == AttendanceStatus.Present),
+                    AbsentCount = group.Count(item => item.Status == AttendanceStatus.Absent),
+                    LateCount = group.Count(item => item.Status == AttendanceStatus.Late),
+                    ExcusedCount = group.Count(item => item.Status == AttendanceStatus.Excused)
+                })
+                .OrderBy(summary => summary.LectureDate)
+                .ToListAsync();
+        }
     }
 }

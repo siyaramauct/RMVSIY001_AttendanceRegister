@@ -67,5 +67,10 @@ namespace RazorPagesAttendanceRegister.Services
         /// <param name="response">The lecturer's response.</param>
         /// <returns>The result of resolving the query.</returns>
         Task<AttendanceResult> ResolveQueryAsync(string lecturerId, int queryId, bool approve, string response);
+
+        /// <summary>
+        /// Retrieves attendance counts by lecture date for a lecturer's course.
+        /// </summary>
+        Task<List<LectureAttendanceSummaryDto>> GetAttendanceOverviewAsync(string lecturerId, int courseId);
     }
 }

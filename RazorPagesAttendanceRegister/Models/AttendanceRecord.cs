@@ -34,6 +34,11 @@ namespace RazorPagesAttendanceRegister.Models
         public AttendanceStatus Status { get; set; }
 
         /// <summary>
+        /// Gets or sets the source used to create or last update this attendance record.
+        /// </summary>
+        public AttendanceMethod Method { get; set; } = AttendanceMethod.Manual;
+
+        /// <summary>
         /// Gets or sets the UTC timestamp when the attendance record was created.
         /// </summary>
         public DateTime RecordedAt { get; set; }

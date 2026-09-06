@@ -124,11 +124,11 @@ namespace RazorPagesAttendanceRegister.Areas.Identity.Pages.Account
                     {
                         if (user.Role == UserRole.Student)
                         {
-                            return RedirectToPage("/Student/RecordAttendance");
+                            return RedirectToPage("/Student/Index");
                         }
                         else if (user.Role == UserRole.Lecturer)
                         {
-                            return RedirectToPage("/Lecturer/ViewAttendance");
+                            return RedirectToPage("/Lecturer/Index");
                         }
                     }
 

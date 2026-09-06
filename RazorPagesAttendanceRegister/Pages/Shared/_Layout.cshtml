@@ -34,7 +34,18 @@
                     </a>
 
                     <div class="nav-center" aria-label="Primary navigation">
-                        <a class="nav-link" asp-area="" asp-page="/Index">Home</a>
+                        @if (User.IsInRole("Student"))
+                        {
+                            <a class="nav-link" asp-area="" asp-page="/Student/Index">Home</a>
+                        }
+                        else if (User.IsInRole("Lecturer"))
+                        {
+                            <a class="nav-link" asp-area="" asp-page="/Lecturer/Index">Home</a>
+                        }
+                        else
+                        {
+                            <a class="nav-link" asp-area="" asp-page="/Index">Home</a>
+                        }
                         <a class="nav-link" asp-area="" asp-page="/Privacy">Privacy</a>
                     </div>
 

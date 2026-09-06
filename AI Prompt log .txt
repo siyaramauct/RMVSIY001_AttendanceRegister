@@ -1,0 +1,408 @@
+This assignment will be done through breakdowns of specific usecases that will end up in the complete project for example the
+first usecase will be User authentication and authorization. The relevant classes , pages and methods for implementing
+the usecase will be done step by step throughout the View , Domain and Data Layer instead of creating respective classes & components 
+through each layer.
+
+NB Assumption : Courses and Lecturers are already populated and managed by UCT Admin and 
+Lecturers should not be able to necessarily create or manage courses and lecturers , this 
+system is simply for marking attendance. 
+
+Note : AI was used to enhance and add some aspects of technical specificity to my prompts 
+to refine the output/outcome but the intent and strategy was based on my own thoughts. 
+
+1. Authentication
+
+1.1 In the models folder please create a class AttendanceUser that inherits from Microsoft.AspNetCore.Identity.IdentityUser
+(default string Id, no generic key type). Add these additional properties: Name  (string, required) , Surname (string , required) Role (an enum UserRole with values Student and Lecturer) StudentNumber (string, nullable — only relevant when Role is Student, used for mapping student to excel spreedsheet)
+Also create the UserRole enum in the same Models folder. Add  comments explaining
+each property's purpose. Do not add any database configuration here yet that belongs in the
+DbContext.
+
+1.2 Create an AttendanceDbContext class that inherits from
+Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<ApplicationUser>.
+It should have a constructor accepting DbContextOptions<AttendanceDbContext> and pass it to
+the base class. Don't add any DbSets yet beyond what IdentityDbContext already provides
+Then update Program.cs to:  Read a connection string named "DefaultConnection" from appsettings.json ,  Register AttendanceDbContext with builder.Services.AddDbContext, using UseSqlite,  Give me the appsettings.json connection string entry to add, pointing to a local file
+   called attendance.db
+
+1.3 Create a folder called Data within the project , move AttendanceDbContext there and update any referencing code if needed. 
+
+1.4 In Program.cs, configure ASP.NET Core Identity using builder.Services.AddIdentity<AttendanceUser, IdentityRole>()
+backed by AttendanceDbContext (AddEntityFrameworkStores + AddDefaultTokenProviders). Also call
+AddRazorPages(). After the app is built, add an async method SeedRolesAsync(WebApplication app)
+that runs at startup, resolves RoleManager<IdentityRole>, and creates the "Student" and
+"Lecturer" roles if they don't already exist. Call this method once after app.Build() and
+before app.Run(). Show me the full updated Program.cs.
+
+1.5  I've scaffolded Identity's Register.cshtml and Register.cshtml.cs under Areas/Identity/Pages/Account/.
+The user class is AttendanceUser (not ApplicationUser) please confirm _userManager is typed as
+UserManager<AttendanceUser> and _signInManager as SignInManager<AttendanceUser> in this file;
+update them if they still reference ApplicationUser.
+
+   Modify the InputModel in Register.cshtml.cs to add:
+   Name (string, [Required])
+   Surname (string, [Required])
+   Role (UserRole enum, [Required], rendered as a dropdown: Student/Lecturer)
+   StudentNumber (string, nullable) , please also 
+   Make InputModel implement IValidatableObject so that StudentNumber is required ONLY when
+   Role == UserRole.Student (return a ValidationResult naming the StudentNumber field if it's
+   missing in that case). In OnPostAsync, after the user is created successfully, set
+   user.Name, user.Surname, user.Role, and user.StudentNumber from the input BEFORE calling
+   _userManager.CreateAsync, and after creation, call _userManager.AddToRoleAsync(user, Role.ToString())
+   so the new user is added to the matching Identity role. Update Register.cshtml to add the
+   Name textbox, Surname textbox, Role dropdown, and StudentNumber textbox (only show/enable
+   StudentNumber via a small bit of JS when Role == Student — but validate server-side
+   regardless of the UI state).
+
+1.6  Please add the register and login navigation links to the page .
+
+1.7 You are a senior UI/UX designer and frontend developer . Please enhance the UI to be very sleek modern and minimal . Utilise UCT logos and colour palettes . 
+Do not use accents and lucide-react icons . 
+Modernise the UI using inspiration from mobbin and dribble .
+
+1.8 Please use static design patterns , no drop shadows or glows , make the buttons more rectangular but still rounded. UCT uses the following colours , #000000 , #009ADA , #00243A . 
+Please reintegrate these colour palettes . Please do not use generic AI styling features and keep the layout simple , readable and user friendly . 
+Please also use the # Noto Serif Ottoman Siyaq font from google fonts.
+
+1.9 please make it so email verification is not needed . 
+
+2. Student Marking their attendance and Past Attendance
+  -> this is a core usecase which hypothetically be broken down into various usecases but for the s
+    sake of simplicity I will treat it as its own use case .
+
+2.1 In my Models folder, create the following classes (plain C# classes, no EF Core Fluent API
+here — that belongs in the DbContext):
+      1.  Course: Id (int, primary key), Code (string, required), Name (string, required),
+   LecturerId (string, nullable — FK to AttendanceUser.Id, the lecturer who owns this course).
+
+   2.  Lecture: Id (int, primary key), CourseId (int, FK to Course), ScheduledDate (DateOnly),
+   StartTime (TimeOnly), EndTime (TimeOnly).
+
+      3.  AttendanceStatus enum: Present, Absent, Late, Excused
+      AttendanceRecord: Id (int, primary key), LectureId (int, FK to Lecture), StudentId
+   (string, FK to AttendanceUser.Id), Status (AttendanceStatus), RecordedAt (DateTime, UTC).
+
+   Add  doc comments explaining each property. Use int primary keys with identity/autoincrement
+(EF Core default) rather than Guid, to keep this simple.
+
+2.2 Update AttendanceDbContext to add DbSet<Course>, DbSet<Lecture>, and DbSet<AttendanceRecord>.
+In OnModelCreating (call base.OnModelCreating first, since this extends IdentityDbContext),
+configure:  A unique index on AttendanceRecord for the combination of (LectureId, StudentId), so a
+  student can never have two attendance rows for the same lecture.
+   Restrict (not cascade) delete behavior on Course -> Lecture and Lecture -> AttendanceRecord,
+  so deleting a course/lecture doesn't silently wipe attendance history.
+Explain each configuration line with a comment.
+
+2.3 In Program.cs, add an async method SeedTestDataAsync(WebApplication app) that runs at startup
+(after role seeding) and, using AttendanceDbContext, checks if any Course rows exist. If none
+exist, create one Course (Code="INF3003W", Name="Systems Development I") and two Lecture rows
+under it: one with ScheduledDate = today's date, and one with ScheduledDate = yesterday.
+Call this method once after app.Build(), guarded so it only seeds when the Course table is
+empty (don't duplicate on every restart).
+
+2.4 In a Services folder, create:
+
+   1. A DTO AttendanceResult: bool Success, string Message.
+
+   2. Interface IAttendanceService with:
+      Task<AttendanceResult> RecordAttendanceAsync(string studentId, int lectureId);
+      Task<List<Lecture>> GetAvailableLecturesAsync();
+
+   3. Class AttendanceService : IAttendanceService, constructor-injecting AttendanceDbContext.
+      Implement:
+      - RecordAttendanceAsync: check if an AttendanceRecord already exists for this
+      studentId + lectureId using .AnyAsync(); if so return AttendanceResult with
+      Success=false and a clear message ("You've already recorded attendance for this
+      lecture."). If the lectureId doesn't exist at all, also return Success=false with
+      a "Lecture not found" message — don't let it throw. Otherwise create a new
+      AttendanceRecord with Status=Present and RecordedAt=DateTime.UtcNow, save via
+      _context.SaveChangesAsync(), and return Success=true.
+      - GetAvailableLecturesAsync: return all Lecture rows including their Course (use
+      .Include(l => l.Course)), ordered by ScheduledDate descending.
+
+   Register IAttendanceService -> AttendanceService as Scoped in Program.cs (Scoped, not
+   Singleton, since it now depends on AttendanceDbContext which is itself Scoped).
+
+2.5 Create a Razor Page at /Pages/Student/RecordAttendance.cshtml, constructor-injecting
+IAttendanceService. In OnGetAsync, call GetAvailableLecturesAsync() and display them as a
+list (Course code + name + date), each with a "Mark Present" button posting to
+OnPostAsync(int lectureId). In OnPostAsync, get the current student's Id using
+User.FindFirstValue(ClaimTypes.NameIdentifier), call RecordAttendanceAsync(studentId,
+lectureId), and show the returned AttendanceResult.Message as a success or error alert
+without losing the lecture list (redisplay it after the post). Add
+using System.Security.Claims; at the top for the claims lookup. Please also add updated navigations and page elements thus far to fulfil the usecase. 
+
+2.6 Can you please fix the name on the navbar to be the users name and not their email . 
+Can you please also check the logout functionality
+
+2.7 When a user is logged in as a student they shouldnt be redirected to the homepage/landing page thye shouldnt be able to access this homepage once logged in  , 
+they should be automatically redirected to the student attendance page if they are a student. 
+Also please only use the first name for the navbar user name.  
+
+2.8   I have a Razor Page at /Pages/Student/RecordAttendance.cshtml.cs (PageModel class
+RecordAttendanceModel). Add [Authorize(Roles = "Student")] directly above the class
+declaration, and add "using Microsoft.AspNetCore.Authorization;" at the top if it's missing.
+Then, review my Program.cs and show me exactly where options.Conventions.AuthorizeFolder
+is configured for "/Student" and "/Lecturer". Verify:
+   1. The folder path strings exactly match my actual folder names under /Pages (case and
+      spelling), since AuthorizeFolder matches by route path.
+   2. AuthorizeFolder is called on the same options object passed to
+      builder.Services.AddRazorPages(options => { ... }) — not on a separate, unused
+      RazorPagesOptions instance.
+   3. app.MapRazorPages() (or equivalent) runs after UseAuthentication() and
+      UseAuthorization() in the middleware pipeline — wrong ordering silently disables
+      authorization checks entirely.
+   Point out anything mismatched and fix it.
+
+2.9 Update my SeedTestDataAsync method in Program.cs. Instead of creating a Course with a
+null/placeholder LecturerId, do the following:
+
+   1. Before seeding, use RoleManager/UserManager to find the first AttendanceUser in the
+      "Lecturer" role (query via _userManager.GetUsersInRoleAsync("Lecturer") and take the
+      first result). If no Lecturer account exists yet, skip seeding entirely and log a
+      warning to the console ("No lecturer account found — skipping course/lecture seed data")
+      rather than creating a Course with an invalid LecturerId.
+
+   2. If a Lecturer is found, set Course.LecturerId to that lecturer's real Id when seeding
+      "INF3003W". Keep the existing two Lecture rows (today and yesterday), but change the
+      seed logic so it ALSO adds a third Lecture with StartTime/EndTime spanning the current
+      moment (e.g. StartTime = now minus 10 minutes, EndTime = now plus 20 minutes, in UTC),
+      so there's always one lecture currently "in progress" to test the time-window logic
+      against without manually editing the database each time.
+
+   Only insert seed data if the Course table is empty, as before don't duplicate on restart.
+   Show me the full updated method.
+
+
+2.10 . Lecturers do not create and update actual courses and lecture dates they only manage the attendace records,
+please insert test dummy data into courses ,  lecture and AttendanceRecord tables , use the following dummy test user data 
+to populate and fill userID gaps {......}. 
+
+
+3. Teacher Viewing ,  Managing and Updating AttendanceRecords. 
+
+3.1 Please create a page where a lecturer can see a courses attendance records for all its students , 
+showing each students attendance status for that record.  
+Group the attendance records by the lectures date . 
+Navigate to this page through the view details button on the course a lecturer lectures . 
+
+3.2 Please be mindful to only show record attendances up to the current date/time the teacher is seeing it not future dates . 
+Please also add a mechanism such that a students record status can be updated by the teacher through their view , 
+his has to be reflected back in the db and overall system . 
+
+4. Student Queries and Lecturer Query Management
+
+4.1 In my Models folder, add:
+- QueryStatus enum: Pending, Approved, Rejected
+- AttendanceQuery class: Id (int, primary key), AttendanceRecordId (int, FK to
+  AttendanceRecord), StudentId (string, FK to AttendanceUser.Id), Reason (string, required,
+  max length 500), Status (QueryStatus, default Pending), LecturerResponse (string,
+  nullable), CreatedAt (DateTime), ResolvedAt (DateTime, nullable).
+
+Update AttendanceDbContext to add DbSet<AttendanceQuery>, and in OnModelCreating configure
+Restrict delete behavior on AttendanceRecord -> AttendanceQuery. Show me the migration
+commands to run afterward.
+
+4.2  Please Add to IAttendanceService:
+   Task<AttendanceResult> RaiseQueryAsync(string studentId, int attendanceRecordId, string reason);
+   Task<List<AttendanceQuery>> GetQueriesForStudentAsync(string studentId);
+
+   Implement RaiseQueryAsync with these checks, in this order:
+   1. Fetch the AttendanceRecord by Id. If null, return Success=false, Message="Attendance
+      record not found."
+   2. If record.StudentId != studentId, return Success=false, Message="You can only query your
+      own attendance records."
+   3. If an AttendanceQuery already exists for this AttendanceRecordId with Status=Pending,
+      return Success=false, Message="You already have a pending query on this record."
+   4. If reason is null, empty, or over 500 characters, return Success=false with a message
+      describing the limit.
+   5. Otherwise create the AttendanceQuery with Status=Pending, CreatedAt=DateTime.UtcNow,
+      save, return Success=true, Message="Your query has been submitted."
+
+   Implement GetQueriesForStudentAsync returning all AttendanceQuery rows for that studentId,
+   each with enough info (via projection or Include) to show Course code, Lecture date, and
+   the original AttendanceRecord's Status alongside the query's own Status.
+
+4.3  Update /Pages/Student/RecordAttendance.cshtml.cs and .cshtml. In OnGetAsync, also call
+GetQueriesForStudentAsync(studentId) and store the result on the PageModel so the view can
+check it. In the "Your attendance history" table, for each row where Status is Absent or
+Late AND there's no existing Pending query for that AttendanceRecordId, show a "Query this"
+button that reveals an inline form (textarea for Reason + submit) posting to a new handler
+OnPostRaiseQueryAsync(int attendanceRecordId, string reason). Get the student's Id via
+User.FindFirstValue(ClaimTypes.NameIdentifier), call RaiseQueryAsync, show the returned
+message, then RedirectToPage() to refresh the table. For rows that already have a query,
+show its current Status (Pending/Approved/Rejected) as a small badge instead of the button.
+
+4.4 Add to IAttendanceService:
+Task<List<AttendanceQuery>> GetPendingQueriesForLecturerAsync(string lecturerId);
+Task<AttendanceResult> ResolveQueryAsync(string lecturerId, int queryId, bool approve, string response);
+
+Implement GetPendingQueriesForLecturerAsync: return all AttendanceQuery rows with
+Status=Pending where the related AttendanceRecord -> Lecture -> Course has
+Course.LecturerId == lecturerId (join through the chain via Include/ThenInclude or a
+projection). Include enough info to display: student name, course code, lecture date,
+the original attendance status, and the student's Reason text.
+   Implement ResolveQueryAsync with these checks, in order:
+   1. Fetch the AttendanceQuery by Id (include its AttendanceRecord -> Lecture -> Course).
+      If null, return Success=false, Message="Query not found."
+   2. If the query's course doesn't belong to this lecturerId, return Success=false,
+      Message="You can only resolve queries for your own courses." (ownership check —
+      don't skip this even though only one lecturer will realistically test it right now).
+   3. If query.Status != Pending, return Success=false, Message="This query has already been
+      resolved."
+   4. If approve is true: set the AttendanceQuery's Status=Approved, LecturerResponse=response,
+      ResolvedAt=DateTime.UtcNow, AND update the linked AttendanceRecord's Status to
+      AttendanceStatus.Excused. If approve is false: set Status=Rejected,
+      LecturerResponse=response, ResolvedAt=DateTime.UtcNow — do NOT touch the AttendanceRecord.
+      Save both changes in a single SaveChangesAsync call so they commit together.
+   5. Return Success=true with a confirmation message.
+
+4.5 Can you please adjust the nav abr items to be in a horizontal line and not on top of each other , 
+please also space out the register and log in form elements. Make the logout button have white text too .
+
+5. Teacher uploads excel sheet to  attendance 
+
+5.1 {INF3003W_AttendanceList} Please replace all the fill in student numbers with these student numbers , DIALAMO001 — Amad Diallo SMTSAM001 — Sam Smith TESTSTU001 — Liam Mokoena TESTSTU002 — Mia Williams TESTSTU003 — Noah Dlamini TESTSTU004 — Zoe Pillay TESTSTU005 — Ethan Botha.
+
+5.2 In  Services folder please add:
+- ParsedAttendanceRow: string StudentNumber, DateOnly LectureDate, bool WasPresent
+- ImportParseResult: List<ParsedAttendanceRow> Rows, List<string> StructuralErrors
+  (StructuralErrors is for file-level problems , unreadable file, unparseable header row 
+  not per-student issues)
+- ImportSummary: int RecordsCreated, int RecordsUpdated, int LecturesAutoCreated,
+  List<string> UnmatchedStudentNumbers, bool Success, string Message
+
+Define IAttendanceImportParser with:
+Task<ImportParseResult> ParseAsync(Stream fileStream);
+
+5.3 Implement AttendanceImportParser : IAttendanceImportParser using ClosedXML (add the
+package if missing: dotnet add package ClosedXML). The expected layout, exactly matching
+this real sample:
+- Row 1 = header. Column A = "Student Name" (ignore). Column B = "Student No" (ignore
+  the header text, but this column's DATA is the actual StudentNumber to match against).
+  Columns C onward = one column per lecture date, header text formatted like
+  "2026/02/25" (yyyy/MM/dd).
+- Rows 2+ = one row per student. Column A = display name (ignore). Column B = student
+  number (string). Columns C onward = "1" or "0" per date column.
+
+Parse each date header into a DateOnly using DateOnly.ParseExact(text, "yyyy/MM/dd"). If
+ANY header fails to parse as a date, add a StructuralError and stop processing entirely
+(return immediately — a broken header means the rest of the file can't be trusted).
+
+For each data row, for each date column, read the cell as an integer. If a cell doesn't
+parse as an integer or isn't 0/1, add a StructuralError naming the row and column and skip
+that individual cell only (don't abort the whole file for one bad cell — only header
+failures are fully structural). Otherwise create a ParsedAttendanceRow with WasPresent =
+(value == 1).
+
+Skip entirely empty rows. Return the full ImportParseResult with everything collected.
+
+5.5 Define IAttendanceImportService:
+   Task<ImportSummary> ImportAsync(string lecturerId, int courseId, List<ParsedAttendanceRow> rows);
+
+   Implement AttendanceImportService (constructor-inject AttendanceDbContext) with this exact
+   sequence:
+
+   1. Fetch the Course by courseId. If it doesn't exist, or its LecturerId doesn't match
+      lecturerId, return ImportSummary with Success=false, Message="You can only import
+      attendance for your own courses." — do not process any rows.
+
+   2. Group the incoming rows by LectureDate. For each distinct date:
+      - Look up an existing Lecture for this CourseId + ScheduledDate.
+      - If none exists, create one with ScheduledDate = that date, StartTime = 09:00,
+      EndTime = 10:00 as defaults (add a code comment noting these are placeholder times
+      since the spreadsheet only carries a date, not exact times), and increment
+      LecturesAutoCreated.
+
+   3. For each ParsedAttendanceRow:
+      - Look up the AttendanceUser by StudentNumber. If not found, add the StudentNumber to
+      UnmatchedStudentNumbers and skip this row (do not fail the whole batch).
+      - If found, look up an existing AttendanceRecord for this StudentId + the resolved
+      LectureId.
+      - If one exists, update its Status (Present/Absent based on WasPresent) and set
+         Method = AttendanceMethod.ExcelImport, increment RecordsUpdated.
+      - If none exists, create a new AttendanceRecord with Status, RecordedAt = UtcNow,
+         Method = ExcelImport, increment RecordsCreated.
+
+   4. Wrap steps 2–3 in a single database transaction. Call SaveChangesAsync once at the end,
+      not per row.
+
+   5. Set Success=true and a Message summarizing counts, e.g. "Imported 42 records (12
+      updated), 2 lectures auto-created, 3 student numbers not matched." Return the full
+      ImportSummary including the UnmatchedStudentNumbers list so the page can display exactly
+      which ones failed.
+
+   
+   5.6 Create /Pages/Lecturer/ImportAttendance.cshtml and .cshtml.cs. Add
+[Authorize(Roles = "Lecturer")] above the PageModel class.
+
+In OnGetAsync, get the lecturer's Id via User.FindFirstValue(ClaimTypes.NameIdentifier),
+fetch their own courses (reuse GetCoursesForLecturerAsync if it already exists), and expose
+them as a dropdown-bindable list on the PageModel.
+
+Build the form: a dropdown of the lecturer's courses (bind to CourseId), and a file input
+restricted to .xlsx. On OnPostAsync(int courseId, IFormFile file):
+- Reject if file is null, empty, or doesn't end in .xlsx, with a clear inline error.
+- Reject if file size exceeds 5MB.
+- Call IAttendanceImportParser.ParseAsync(file.OpenReadStream()). If StructuralErrors is
+  non-empty, display them and STOP — do not call the import service at all.
+- Otherwise call IAttendanceImportService.ImportAsync(lecturerId, courseId, result.Rows)
+  and display the full ImportSummary: counts of created/updated records, lectures
+  auto-created, and the list of UnmatchedStudentNumbers if any (as a simple bulleted list
+  so the lecturer knows exactly which numbers to check).
+
+Redisplay the course dropdown after both success and failure (don't lose the lecturer's
+selected course on a validation error).
+
+6. Student Attendance Graph 
+
+6.1 Add to IAttendanceService:
+Task<List<LectureAttendanceSummaryDto>> GetAttendanceOverviewAsync(string lecturerId, int courseId);
+
+   Add the DTO:
+   LectureAttendanceSummaryDto: DateOnly LectureDate, int PresentCount, int AbsentCount,
+   int LateCount, int ExcusedCount.
+
+   Implement GetAttendanceOverviewAsync with these steps:
+   1. Fetch the Course by courseId. If it doesn't exist or its LecturerId != lecturerId,
+      return an empty list (the page will handle showing an appropriate message — don't throw).
+   2. Run a single EF Core query that joins Lecture -> AttendanceRecord for this CourseId,
+      groups by Lecture.ScheduledDate, and produces counts per AttendanceStatus using
+      conditional counts inside the GroupBy (e.g.
+      .Select(g => new LectureAttendanceSummaryDto {
+         LectureDate = g.Key,
+         PresentCount = g.Count(r => r.Status == AttendanceStatus.Present),
+         AbsentCount = g.Count(r => r.Status == AttendanceStatus.Absent),
+         LateCount = g.Count(r => r.Status == AttendanceStatus.Late),
+         ExcusedCount = g.Count(r => r.Status == AttendanceStatus.Excused)
+      })
+      ). Order the result by LectureDate ascending. Show me the actual LINQ query — I want to
+      confirm it translates to a single SQL query, not a client-evaluation fallback.
+
+6.2 Create /Pages/Lecturer/Overview.cshtml and .cshtml.cs. Add [Authorize(Roles = "Lecturer")]
+    above the PageModel class. 
+
+   In OnGetAsync(int? courseId), get the lecturer's Id via
+   User.FindFirstValue(ClaimTypes.NameIdentifier), fetch their own courses for the dropdown
+   (reuse GetCoursesForLecturerAsync). If courseId is null, default to the first course in
+   their list. Call GetAttendanceOverviewAsync(lecturerId, courseId.Value) and store the
+   result as a property. Serialize it to a small JSON array on the page (just the fields
+   needed for the chart — LectureDate as a short string, and the four counts) rather than
+   passing the full DTO objects with unused properties.
+
+   Build the page with:
+   - A course dropdown that reloads the page via a simple GET when changed (no JS framework
+   needed, plain <select onchange="this.form.submit()">).
+   - A <canvas> element for the chart.
+   - Load Chart.js from CDN (https://cdn.jsdelivr.net/npm/chart.js) in a <script> tag.
+   - In a separate file wwwroot/js/overview.js (not inline in the .cshtml), read the chart
+   data from a data-attribute on the canvas element (JSON string), parse it, and render a
+   stacked bar chart: x-axis = lecture dates, four stacked series (Present=green,
+   Absent=red, Late=amber, Excused=blue).
+
+   If GetAttendanceOverviewAsync returns an empty list (no course, or no data yet), show a
+   plain message ("No attendance data available for this course yet.") instead of an empty
+   chart.
+
+
+

@@ -1,0 +1,60 @@
+@page
+@model RazorPagesAttendanceRegister.Pages.Lecturer.IndexModel
+@{
+    ViewData["Title"] = "Lecturer Home";
+}
+
+<div class="portal-home lecturer-home">
+    <section class="portal-hero lecturer-hero">
+        <div class="portal-hero-content">
+            <p class="eyebrow">Lecturer portal</p>
+            <h1>Lead the room with clarity.</h1>
+            <p>Move from today's attendance work to course insight, query resolution, and a cleaner view of your
+                teaching record.</p>
+                <div class="hero-actions">
+                    <a class="primary-btn" asp-page="/Lecturer/ViewAttendance">Manage attendance</a>
+                    <a class="secondary-btn" asp-page="/Lecturer/ManageQueries">Review queries</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="portal-section-heading">
+            <div>
+                <p class="section-kicker">Academic brief</p>
+                <h2>What is shaping the university week</h2>
+            </div>
+            <span class="section-note">Teaching and campus signals</span>
+        </section>
+
+        <section class="info-grid lecturer-info-grid">
+            <article class="info-card image-card">
+                <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=900&q=85"
+                     alt="Academic colleagues collaborating around a table" />
+                <div class="info-card-body">
+                    <span class="card-label">Academic practice</span>
+                    <h3>Small feedback loops improve course momentum</h3>
+                    <p>Use attendance patterns as an early signal for where students may need clearer guidance or a timely
+                        check-in.</p>
+                    </div>
+                </article>
+                <article class="info-card image-card">
+                    <img src="https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?auto=format&fit=crop&w=900&q=85"
+                         alt="Modern university campus buildings" />
+                    <div class="info-card-body">
+                        <span class="card-label">RSA university news</span>
+                        <h3>Universities continue expanding digital learning support</h3>
+                        <p>Keep an eye on faculty communications for teaching development sessions, student support initiatives,
+                            and policy updates.</p>
+                        </div>
+                    </article>
+                    <article class="info-card tip-card">
+                        <div class="tip-number">03</div>
+                        <div class="info-card-body">
+                            <span class="card-label">Lecturer tip</span>
+                            <h3>Resolve attendance queries with a useful note</h3>
+                            <p>A short, specific response gives the student closure and leaves a clearer audit trail for the course
+                                record.</p>
+                            </div>
+                        </article>
+                    </section>
+                </div>

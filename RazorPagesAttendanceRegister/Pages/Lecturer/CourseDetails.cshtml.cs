@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RazorPagesAttendanceRegister.Data;
 using RazorPagesAttendanceRegister.Models;
+using RazorPagesAttendanceRegister.Services;
 
 namespace RazorPagesAttendanceRegister.Pages.Lecturer
 {
@@ -12,10 +13,17 @@ namespace RazorPagesAttendanceRegister.Pages.Lecturer
     public class CourseDetailsModel : PageModel
     {
         private readonly AttendanceDbContext _context;
+        private readonly IAttendanceImportParser _importParser;
+        private readonly IAttendanceImportService _importService;
 
-        public CourseDetailsModel(AttendanceDbContext context)
+        public CourseDetailsModel(
+            AttendanceDbContext context,
+            IAttendanceImportParser importParser,
+            IAttendanceImportService importService)
         {
             _context = context;
+            _importParser = importParser;
+            _importService = importService;
         }
 
         public Course? Course { get; set; }
@@ -42,12 +50,16 @@ namespace RazorPagesAttendanceRegister.Pages.Lecturer
             public string StudentName { get; set; } = string.Empty;
             public string StudentNumber { get; set; } = string.Empty;
             public AttendanceStatus Status { get; set; }
+            public AttendanceMethod Method { get; set; }
             public DateTime RecordedAt { get; set; }
         }
 
         public List<LectureAttendanceGroup> AttendanceByLecture { get; set; } = new();
         public string ErrorMessage { get; set; } = string.Empty;
         public string SuccessMessage { get; set; } = string.Empty;
+        public List<string> StructuralErrors { get; set; } = new();
+        public List<string> UnmatchedStudents { get; set; } = new();
+        public ImportSummary? ImportResult { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int courseId)
         {
@@ -121,6 +133,7 @@ namespace RazorPagesAttendanceRegister.Pages.Lecturer
             if (Enum.TryParse<AttendanceStatus>(newStatus.ToString(), out var statusValue))
             {
                 attendanceRecord.Status = statusValue;
+                attendanceRecord.Method = AttendanceMethod.Manual;
                 attendanceRecord.RecordedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
                 SuccessMessage = "Attendance record updated successfully.";
@@ -132,6 +145,86 @@ namespace RazorPagesAttendanceRegister.Pages.Lecturer
 
             await LoadAttendanceData(courseId);
             Course = course;
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostUploadAsync(int courseId, IFormFile? uploadFile)
+        {
+            var lecturerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(lecturerId))
+            {
+                ErrorMessage = "You must be signed in to import attendance.";
+                return Page();
+            }
+
+            var course = await _context.Courses
+                .Where(c => c.Id == courseId && c.LecturerId == lecturerId)
+                .FirstOrDefaultAsync();
+
+            if (course == null)
+            {
+                ErrorMessage = "Course not found or you don't have permission to modify it.";
+                return Page();
+            }
+
+            Course = course;
+
+            if (uploadFile == null || uploadFile.Length == 0)
+            {
+                ErrorMessage = "Please select an Excel (.xlsx) file to upload.";
+                await LoadAttendanceData(courseId);
+                return Page();
+            }
+
+            if (!uploadFile.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                ErrorMessage = "Only Excel spreadsheet files (.xlsx) are supported.";
+                await LoadAttendanceData(courseId);
+                return Page();
+            }
+
+            ImportParseResult parseResult;
+            try
+            {
+                using var stream = uploadFile.OpenReadStream();
+                parseResult = await _importParser.ParseAsync(stream);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Failed to read the uploaded spreadsheet: {ex.Message}";
+                await LoadAttendanceData(courseId);
+                return Page();
+            }
+
+            if (parseResult.StructuralErrors.Any())
+            {
+                StructuralErrors = parseResult.StructuralErrors;
+                ErrorMessage = "The uploaded file contains formatting or structural errors.";
+                await LoadAttendanceData(courseId);
+                return Page();
+            }
+
+            if (!parseResult.Rows.Any())
+            {
+                ErrorMessage = "No attendance data rows were found in the uploaded file.";
+                await LoadAttendanceData(courseId);
+                return Page();
+            }
+
+            var summary = await _importService.ImportAsync(lecturerId, courseId, parseResult.Rows);
+
+            if (summary.Success)
+            {
+                SuccessMessage = summary.Message;
+                ImportResult = summary;
+                UnmatchedStudents = summary.UnmatchedStudentNumbers;
+            }
+            else
+            {
+                ErrorMessage = summary.Message;
+            }
+
+            await LoadAttendanceData(courseId);
             return Page();
         }
 
@@ -192,6 +285,7 @@ namespace RazorPagesAttendanceRegister.Pages.Lecturer
                                 StudentName = student != null ? $"{student.Name} {student.Surname}" : "Unknown",
                                 StudentNumber = student?.StudentNumber ?? string.Empty,
                                 Status = ar.Status,
+                                Method = ar.Method,
                                 RecordedAt = ar.RecordedAt
                             };
                         })

@@ -33,6 +33,8 @@ builder.Services.AddRazorPages(options =>
 });
 builder.Services.AddScoped<IEmailSender, NoOpEmailSender>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<IAttendanceImportParser, AttendanceImportParser>();
+builder.Services.AddScoped<IAttendanceImportService, AttendanceImportService>();
 
 var app = builder.Build();
 
