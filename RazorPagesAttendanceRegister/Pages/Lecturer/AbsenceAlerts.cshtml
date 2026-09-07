@@ -1,0 +1,77 @@
+@page
+@model RazorPagesAttendanceRegister.Pages.Lecturer.AbsenceAlertsModel
+@{
+    ViewData["Title"] = "Absence Alerts";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-uppercase text-primary fw-semibold mb-1">Lecturer portal</p>
+            <h1 class="mb-1">Absence alerts</h1>
+            <p class="text-muted mb-0">Students with four or more consecutive missed lectures.</p>
+        </div>
+        <a asp-page="/Lecturer/Index" class="btn btn-outline-secondary">Back to courses</a>
+    </div>
+
+    @if (Model.Courses.Any())
+    {
+        <form method="get" class="mb-4">
+            <label for="courseId" class="form-label">Course</label>
+            <select id="courseId" name="courseId" class="form-select" onchange="this.form.submit()">
+                @foreach (var course in Model.Courses)
+                {
+                    if (course.Id == Model.CourseId)
+                    {
+                        <option value="@course.Id" selected>@course.Code - @course.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@course.Id">@course.Code - @course.Name</option>
+                    }
+                }
+            </select>
+        </form>
+
+        @if (Model.AbsenceAlerts.Any())
+        {
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Student Name</th>
+                            <th scope="col">Current Streak</th>
+                            <th scope="col">Last Attended</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var alert in Model.AbsenceAlerts)
+                        {
+                            <tr>
+                                <td>@alert.StudentName</td>
+                                <td>
+                                    <strong class="@(alert.CurrentStreak >= 4 ? "text-danger" : string.Empty)">
+                                        @alert.CurrentStreak
+                                    </strong>
+                                </td>
+                                <td>
+                                    @(alert.LastAttendedDate.HasValue
+                                        ? alert.LastAttendedDate.Value.ToString("dd MMM yyyy")
+                                        : "Never attended")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No students currently have 4 or more consecutive missed lectures in this course.</p>
+        }
+    }
+    else
+    {
+        <p class="text-muted">No courses are assigned to you.</p>
+    }
+</div>

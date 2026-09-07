@@ -72,5 +72,10 @@ namespace RazorPagesAttendanceRegister.Services
         /// Retrieves attendance counts by lecture date for a lecturer's course.
         /// </summary>
         Task<List<LectureAttendanceSummaryDto>> GetAttendanceOverviewAsync(string lecturerId, int courseId);
+
+        /// <summary>
+        /// Retrieves students with at least four consecutive absences in a course.
+        /// </summary>
+        Task<List<AbsenceStreakDto>> GetStudentsWithMissingStreakAsync(int courseId);
     }
 }

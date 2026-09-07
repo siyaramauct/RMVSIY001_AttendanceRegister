@@ -50,6 +50,8 @@ namespace RazorPagesAttendanceRegister.Services
                 var lectureDates = new Dictionary<int, DateOnly>();
                 for (var column = 3; column <= lastColumn; column++)
                 {
+                    // Parse every date header before reading student rows so a malformed column
+                    // cannot produce a partially trusted import.
                     var headerCell = worksheet.Cell(1, column);
                     DateOnly lectureDate;
                     var dateParsed = false;
@@ -128,6 +130,8 @@ namespace RazorPagesAttendanceRegister.Services
 
                         if (!valid)
                         {
+                            // A bad attendance cell affects only that cell; the remaining rows
+                            // can still be imported and the error is reported to the lecturer.
                             var cellText = cell.GetString().Trim();
                             result.StructuralErrors.Add(
                                 $"Invalid attendance value at row {row}, column {cell.Address.ColumnLetter}: '{cellText}'. Expected 1 for Present or 0 for Absent.");

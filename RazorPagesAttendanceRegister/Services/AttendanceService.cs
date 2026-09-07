@@ -377,5 +377,74 @@ namespace RazorPagesAttendanceRegister.Services
                 .OrderBy(summary => summary.LectureDate)
                 .ToListAsync();
         }
+
+        /// <inheritdoc />
+        public async Task<List<AbsenceStreakDto>> GetStudentsWithMissingStreakAsync(int courseId)
+        {
+            var records = await _context.AttendanceRecords
+                .Where(record => record.Lecture != null && record.Lecture.CourseId == courseId)
+                .Join(
+                    _context.Lectures,
+                    record => record.LectureId,
+                    lecture => lecture.Id,
+                    (record, lecture) => new
+                    {
+                        record.StudentId,
+                        record.Status,
+                        lecture.ScheduledDate
+                    })
+                .Join(
+                    _context.Users,
+                    record => record.StudentId,
+                    student => student.Id,
+                    (record, student) => new
+                    {
+                        record.StudentId,
+                        StudentName = student.Name + " " + student.Surname,
+                        record.Status,
+                        record.ScheduledDate
+                    })
+                .OrderByDescending(record => record.ScheduledDate)
+                .ToListAsync();
+
+            return records
+                .GroupBy(record => new { record.StudentId, record.StudentName })
+                .Select(group =>
+                {
+                    // Records are newest first, so the first non-absent status ends the
+                    // current streak and older absences do not inflate it.
+                    var orderedRecords = group
+                        .OrderByDescending(record => record.ScheduledDate)
+                        .ToList();
+
+                    var currentStreak = 0;
+                    foreach (var record in orderedRecords)
+                    {
+                        if (record.Status != AttendanceStatus.Absent)
+                        {
+                            break;
+                        }
+
+                        currentStreak++;
+                    }
+
+                    var lastAttendedDate = orderedRecords
+                        .FirstOrDefault(record =>
+                            record.Status == AttendanceStatus.Present ||
+                            record.Status == AttendanceStatus.Excused)
+                        ?.ScheduledDate;
+
+                    return new AbsenceStreakDto
+                    {
+                        StudentId = group.Key.StudentId,
+                        StudentName = group.Key.StudentName,
+                        CurrentStreak = currentStreak,
+                        LastAttendedDate = lastAttendedDate
+                    };
+                })
+                .Where(streak => streak.CurrentStreak >= 4)
+                .OrderByDescending(streak => streak.CurrentStreak)
+                .ToList();
+        }
     }
 }

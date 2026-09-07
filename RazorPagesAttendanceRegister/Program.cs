@@ -19,6 +19,12 @@ builder.Services.AddIdentity<AttendanceUser, IdentityRole>(options =>
     .AddEntityFrameworkStores<AttendanceDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Identity/Account/Login";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+});
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Student", policy => policy.RequireRole("Student"));
