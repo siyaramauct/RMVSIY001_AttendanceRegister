@@ -3,20 +3,21 @@ first usecase will be User authentication and authorization. The relevant classe
 the usecase will be done step by step throughout the View , Domain and Data Layer instead of creating respective classes & components 
 through each layer.
 
-NB Assumption : Courses and Lecturers are already populated and managed by UCT Admin and 
+NB Assumptions : Courses and Lecturers are already populated and managed by UCT Admin and 
 Lecturers should not be able to necessarily create or manage courses and lecturers , this 
-system is simply for marking attendance. 
+system is simply for marking attendance. Student recording attendance should only be open during the 
+duration of the lecture not before or after. CRUD for Queries and AttendanceRecords primarily 
+as the rest is handled by UCT ICTS and Admin as mentioned. 
 
 Note : AI was used to enhance and add some aspects of technical specificity to my prompts 
-to refine the output/outcome but the intent and strategy was based on my own thoughts. 
+to refine the output/outcome but the intent , content and strategy was based on my own thoughts. 
 
 1. Authentication
 
 1.1 In the models folder please create a class AttendanceUser that inherits from Microsoft.AspNetCore.Identity.IdentityUser
 (default string Id, no generic key type). Add these additional properties: Name  (string, required) , Surname (string , required) Role (an enum UserRole with values Student and Lecturer) StudentNumber (string, nullable — only relevant when Role is Student, used for mapping student to excel spreedsheet)
 Also create the UserRole enum in the same Models folder. Add  comments explaining
-each property's purpose. Do not add any database configuration here yet that belongs in the
-DbContext.
+each property's purpose. Do not add any database configuration here yet 
 
 1.2 Create an AttendanceDbContext class that inherits from
 Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<ApplicationUser>.
@@ -56,7 +57,7 @@ update them if they still reference ApplicationUser.
 
 1.6  Please add the register and login navigation links to the page .
 
-1.7 You are a senior UI/UX designer and frontend developer . Please enhance the UI to be very sleek modern and minimal . Utilise UCT logos and colour palettes . 
+1.7 You are a senior UI/UX designer and frontend developer . Please enhance the UI to be very modern and minimal . Utilise UCT logos and colour palettes . 
 Do not use accents and lucide-react icons . 
 Modernise the UI using inspiration from mobbin and dribble .
 
@@ -67,11 +68,11 @@ Please also use the # Noto Serif Ottoman Siyaq font from google fonts.
 1.9 please make it so email verification is not needed . 
 
 2. Student Marking their attendance and Past Attendance
-  -> this is a core usecase which hypothetically be broken down into various usecases but for the s
+   this is a core usecase which hypothetically be broken down into various usecases but for the s
     sake of simplicity I will treat it as its own use case .
 
-2.1 In my Models folder, create the following classes (plain C# classes, no EF Core Fluent API
-here — that belongs in the DbContext):
+2.1 In my Models folder, please create the following classes (plain C# classes, no EF Core Fluent API
+):
       1.  Course: Id (int, primary key), Code (string, required), Name (string, required),
    LecturerId (string, nullable — FK to AttendanceUser.Id, the lecturer who owns this course).
 
@@ -85,7 +86,7 @@ here — that belongs in the DbContext):
    Add  doc comments explaining each property. Use int primary keys with identity/autoincrement
 (EF Core default) rather than Guid, to keep this simple.
 
-2.2 Update AttendanceDbContext to add DbSet<Course>, DbSet<Lecture>, and DbSet<AttendanceRecord>.
+2.2 Pleae Update AttendanceDbContext to add DbSet<Course>, DbSet<Lecture>, and DbSet<AttendanceRecord>.
 In OnModelCreating (call base.OnModelCreating first, since this extends IdentityDbContext),
 configure:  A unique index on AttendanceRecord for the combination of (LectureId, StudentId), so a
   student can never have two attendance rows for the same lecture.
@@ -192,14 +193,14 @@ his has to be reflected back in the db and overall system .
 
 4. Student Queries and Lecturer Query Management
 
-4.1 In my Models folder, add:
+4.1 In my Models folder, please add:
 - QueryStatus enum: Pending, Approved, Rejected
 - AttendanceQuery class: Id (int, primary key), AttendanceRecordId (int, FK to
   AttendanceRecord), StudentId (string, FK to AttendanceUser.Id), Reason (string, required,
   max length 500), Status (QueryStatus, default Pending), LecturerResponse (string,
   nullable), CreatedAt (DateTime), ResolvedAt (DateTime, nullable).
 
-Update AttendanceDbContext to add DbSet<AttendanceQuery>, and in OnModelCreating configure
+Please Update AttendanceDbContext to add DbSet<AttendanceQuery>, and in OnModelCreating configure
 Restrict delete behavior on AttendanceRecord -> AttendanceQuery. Show me the migration
 commands to run afterward.
 
@@ -233,7 +234,7 @@ User.FindFirstValue(ClaimTypes.NameIdentifier), call RaiseQueryAsync, show the r
 message, then RedirectToPage() to refresh the table. For rows that already have a query,
 show its current Status (Pending/Approved/Rejected) as a small badge instead of the button.
 
-4.4 Add to IAttendanceService:
+4.4 Please Add to IAttendanceService:
 Task<List<AttendanceQuery>> GetPendingQueriesForLecturerAsync(string lecturerId);
 Task<AttendanceResult> ResolveQueryAsync(string lecturerId, int queryId, bool approve, string response);
 
@@ -403,6 +404,47 @@ Task<List<LectureAttendanceSummaryDto>> GetAttendanceOverviewAsync(string lectur
    If GetAttendanceOverviewAsync returns an empty list (no course, or no data yet), show a
    plain message ("No attendance data available for this course yet.") instead of an empty
    chart.
+
+
+   7. **Bonus Feature : A lecture side feature where students who have missed 4 or more lectures 
+   are tracked and displayed. This feature is to help lectures identify students who may be 
+   struggling and need extra support. 
+
+   7.1 Add to IAttendanceService:
+   Task<List<AbsenceStreakDto>> GetStudentsWithMissingStreakAsync(int courseId);
+
+   Add the DTO:
+   AbsenceStreakDto: string StudentId, string StudentName (Name + " " + Surname), int
+   CurrentStreak, DateOnly? LastAttendedDate.
+
+   Implement as follows:
+   1. Fetch all AttendanceRecords for this courseId (join through Lecture), grouped by
+      StudentId, each group's records ordered by Lecture.ScheduledDate descending.
+   2. For each student, walk their records from most recent backwards, counting consecutive
+      Absent records until hitting the first non-Absent record (or running out of records).
+      This is a simple foreach in memory per student group, not a per-student database query.
+   3. Also find that student's most recent record with Status == Present or Excused, and use
+      its Lecture.ScheduledDate as LastAttendedDate (null if no such record exists at all).
+   4. Only include students where CurrentStreak >= 4 in the returned list.
+   5. Order the result by CurrentStreak descending, so the longest streaks appear first.
+   6. Pull Name and Surname from the related AttendanceUser (join via StudentId) to build
+      StudentName.
+
+   Reuse the AttendanceDbContext already injected into AttendanceService.
+
+   7.2 Create /Pages/Lecturer/AbsenceAlerts.cshtml and .cshtml.cs. Add
+   [Authorize(Roles = "Lecturer")] above the PageModel class.
+
+   In OnGetAsync(int? courseId), get the lecturer's Id via
+   User.FindFirstValue(ClaimTypes.NameIdentifier), fetch their own courses for a dropdown
+   (reuse GetCoursesForLecturerAsync), default to the first course if courseId is null, then
+   call GetStudentsWithMissingStreakAsync(courseId.Value).
+
+   Render a simple table with columns: Student Name, Current Streak (bold, red if >= 4), Last
+   Attended (or "Never attended" if null). If the list is empty, show: "No students currently
+   have 4 or more consecutive missed lectures in this course."
+
+
 
 
 
